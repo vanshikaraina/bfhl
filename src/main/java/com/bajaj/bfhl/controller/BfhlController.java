@@ -3,15 +3,16 @@ package com.bajaj.bfhl.controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 import com.bajaj.bfhl.service.OpenAIService;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 public class BfhlController {
 
     private static final String EMAIL = "vanshika0995.be23@chitkara.edu.in";
+
     @Autowired
     private OpenAIService openAIService;
 
@@ -24,69 +25,83 @@ public class BfhlController {
     }
 
     @PostMapping("/bfhl")
-    public ResponseEntity<Map<String, Object>> bfhl(@RequestBody(required = false) Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> bfhl(
+            @RequestBody(required = false) Map<String, Object> body) {
 
         Map<String, Object> res = new HashMap<>();
         res.put("official_email", EMAIL);
 
         try {
-            if (body == null || body.isEmpty()) {
-                res.put("is_success", false);
-                res.put("data", "Request body is empty");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
-            }
 
-            if (body.size() != 1) {
-                res.put("is_success", false);
-                res.put("data", "Only one input key is allowed");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+            if (body == null || body.size() != 1) {
+                return badRequest(res);
             }
 
             if (body.containsKey("fibonacci")) {
-                int n = (int) body.get("fibonacci");
-                if (n < 0) throw new IllegalArgumentException("Invalid fibonacci input");
+                Object val = body.get("fibonacci");
+                if (!(val instanceof Number)) return badRequest(res);
+                int n = ((Number) val).intValue();
+                if (n < 0 || n > 1000) return badRequest(res);
+
                 res.put("is_success", true);
                 res.put("data", fibonacci(n));
+                return ResponseEntity.ok(res);
             }
 
-            else if (body.containsKey("prime")) {
-                List<Integer> nums = (List<Integer>) body.get("prime");
+            if (body.containsKey("prime")) {
+                List<Integer> nums = parseList(body.get("prime"));
                 res.put("is_success", true);
                 res.put("data", primes(nums));
+                return ResponseEntity.ok(res);
             }
 
-            else if (body.containsKey("lcm")) {
-                List<Integer> nums = (List<Integer>) body.get("lcm");
+            if (body.containsKey("lcm")) {
+                List<Integer> nums = parseList(body.get("lcm"));
                 res.put("is_success", true);
                 res.put("data", lcm(nums));
+                return ResponseEntity.ok(res);
             }
 
-            else if (body.containsKey("hcf")) {
-                List<Integer> nums = (List<Integer>) body.get("hcf");
+            if (body.containsKey("hcf")) {
+                List<Integer> nums = parseList(body.get("hcf"));
                 res.put("is_success", true);
                 res.put("data", hcf(nums));
+                return ResponseEntity.ok(res);
             }
 
-            else if (body.containsKey("AI")) {
-                String question = body.get("AI").toString();
-                String answer = openAIService.askAI(question);
+            if (body.containsKey("AI")) {
+                Object val = body.get("AI");
+                if (!(val instanceof String)) return badRequest(res);
+
                 res.put("is_success", true);
-                res.put("data", answer);
+                res.put("data", openAIService.askAI(val.toString()));
+                return ResponseEntity.ok(res);
             }
 
-            else {
-                res.put("is_success", false);
-                res.put("data", "Invalid input key");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
-            }
-
-            return ResponseEntity.ok(res);
+            return badRequest(res);
 
         } catch (Exception e) {
-            res.put("is_success", false);
-            res.put("data", "Invalid input format");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+            return badRequest(res);
         }
+    }
+
+    private ResponseEntity<Map<String, Object>> badRequest(Map<String, Object> res) {
+        res.put("is_success", false);
+        res.put("data", null);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
+    }
+
+    private List<Integer> parseList(Object obj) {
+        if (!(obj instanceof List)) throw new IllegalArgumentException();
+        List<?> raw = (List<?>) obj;
+        if (raw.isEmpty() || raw.size() > 1000) throw new IllegalArgumentException();
+
+        List<Integer> nums = new ArrayList<>();
+        for (Object o : raw) {
+            if (!(o instanceof Number)) throw new IllegalArgumentException();
+            nums.add(((Number) o).intValue());
+        }
+        return nums;
     }
 
     private List<Integer> fibonacci(int n) {
@@ -120,7 +135,7 @@ public class BfhlController {
     private int lcm(List<Integer> nums) {
         int ans = nums.get(0);
         for (int i = 1; i < nums.size(); i++) {
-            ans = ans * nums.get(i) / gcd(ans, nums.get(i));
+            ans = Math.abs(ans / gcd(ans, nums.get(i)) * nums.get(i));
         }
         return ans;
     }
@@ -134,6 +149,8 @@ public class BfhlController {
     }
 
     private int gcd(int a, int b) {
+        a = Math.abs(a);
+        b = Math.abs(b);
         if (b == 0) return a;
         return gcd(b, a % b);
     }
