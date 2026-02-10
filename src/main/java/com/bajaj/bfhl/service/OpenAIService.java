@@ -27,7 +27,10 @@ public class OpenAIService {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
-            body.put("input", question);
+            body.put(
+                    "input",
+                    "Answer in ONE WORD only. No explanation.\nQuestion: " + question
+            );
 
             HttpEntity<Map<String, Object>> request =
                     new HttpEntity<>(body, headers);
@@ -57,7 +60,8 @@ public class OpenAIService {
             Map textObj = (Map) content.get(0);
 
             String answer = textObj.get("text").toString();
-            return answer.split("\\s+")[0];   // single word (PDF requirement)
+            //return answer.split("\\s+")[0];   // single word (PDF requirement)
+            return answer.trim();
 
         } catch (Exception e) {
             e.printStackTrace();

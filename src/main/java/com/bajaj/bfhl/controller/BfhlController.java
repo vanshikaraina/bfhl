@@ -66,18 +66,18 @@ public class BfhlController {
                 res.put("is_success", true);
                 res.put("data", hcf(nums));
             }
+//
+//            else if (body.containsKey("AI")) {
+//                res.put("is_success", false);
+//                res.put("data", "AI temporarily disabled");
+//            }
 
             else if (body.containsKey("AI")) {
-                res.put("is_success", false);
-                res.put("data", "AI temporarily disabled");
+                String question = body.get("AI").toString();
+                String answer = openAIService.askAI(question);
+                res.put("is_success", true);
+                res.put("data", answer);
             }
-
-//            else if (body.containsKey("AI")) {
-//                String question = body.get("AI").toString();
-//                String answer = openAIService.askAI(question);
-//                res.put("is_success", true);
-//                res.put("data", answer);
-//            }
 
             else {
                 res.put("is_success", false);
