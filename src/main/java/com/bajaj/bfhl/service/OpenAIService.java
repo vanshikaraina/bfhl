@@ -18,6 +18,11 @@ public class OpenAIService {
 
     public String askAI(String question) {
 
+        // SAFETY: don't crash app
+        if (apiKey == null || apiKey.isBlank()) {
+            return "Unavailable";
+        }
+
         try {
             RestTemplate restTemplate = new RestTemplate();
 
@@ -41,30 +46,14 @@ public class OpenAIService {
                     Map.class
             );
 
-            /*
-             Response structure:
-             {
-               "output": [
-                 {
-                   "content": [
-                     { "text": "Mumbai", "type": "output_text" }
-                   ]
-                 }
-               ]
-             }
-            */
-
             List output = (List) response.get("output");
             Map first = (Map) output.get(0);
             List content = (List) first.get("content");
             Map textObj = (Map) content.get(0);
 
-            String answer = textObj.get("text").toString();
-            //return answer.split("\\s+")[0];   // single word (PDF requirement)
-            return answer.trim();
+            return textObj.get("text").toString().trim();
 
         } catch (Exception e) {
-            e.printStackTrace();
             return "Unavailable";
         }
     }
